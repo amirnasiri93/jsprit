@@ -36,18 +36,11 @@ import java.util.List;
  */
 public final class BestInsertion extends AbstractInsertionStrategy {
 
-	private static Logger logger = LoggerFactory.getLogger(BestInsertion.class);
+	final private static Logger logger = LoggerFactory.getLogger(BestInsertion.class);
 
 	private JobInsertionCostsCalculator bestInsertionCostCalculator;
 
-	private NoiseMaker noiseMaker = new NoiseMaker() {
-
-		@Override
-		public double makeNoise() {
-			return 0;
-		}
-
-	};
+	private NoiseMaker noiseMaker = () -> 0;
 
 	public BestInsertion(JobInsertionCostsCalculator jobInsertionCalculator,
 			VehicleRoutingProblem vehicleRoutingProblem) {
@@ -64,10 +57,10 @@ public final class BestInsertion extends AbstractInsertionStrategy {
 	@Override
 	public Collection<Job> insertUnassignedJobs(Collection<VehicleRoute> vehicleRoutes,
 			Collection<Job> unassignedJobs) {
-		List<Job> badJobs = new ArrayList<Job>(unassignedJobs.size());
-		List<Job> unassignedJobList = new ArrayList<Job>(unassignedJobs);
+		List<Job> badJobs = new ArrayList<>(unassignedJobs.size());
+		List<Job> unassignedJobList = new ArrayList<>(unassignedJobs);
 		Collections.shuffle(unassignedJobList, random);
-		Collections.sort(unassignedJobList, new AccordingToPriorities());
+		unassignedJobList.sort(new AccordingToPriorities());
 		for (Job unassignedJob : unassignedJobList) {
 			Insertion bestInsertion = null;
 			InsertionData empty = new InsertionData.NoInsertionFound();
@@ -84,24 +77,17 @@ public final class BestInsertion extends AbstractInsertionStrategy {
 					bestInsertionCost = iData.getInsertionCost();
 				}
 			}
-
-			// only check a new route if we cannot perform insertion in the existing routes
-			// start - modification 
-			if (bestInsertion == null) {
-				VehicleRoute newRoute = VehicleRoute.emptyRoute();
-				InsertionData newIData = bestInsertionCostCalculator.getInsertionData(newRoute, unassignedJob,
-						NO_NEW_VEHICLE_YET, NO_NEW_DEPARTURE_TIME_YET, NO_NEW_DRIVER_YET, bestInsertionCost);
-				if (!(newIData instanceof InsertionData.NoInsertionFound)) {
-					if (newIData.getInsertionCost() < bestInsertionCost + noiseMaker.makeNoise()) {
-						bestInsertion = new Insertion(newRoute, newIData);
-						vehicleRoutes.add(newRoute);
-					}
-				} else {
-					empty.getFailedConstraintNames().addAll(newIData.getFailedConstraintNames());
+			VehicleRoute newRoute = VehicleRoute.emptyRoute();
+			InsertionData newIData = bestInsertionCostCalculator.getInsertionData(newRoute, unassignedJob,
+					NO_NEW_VEHICLE_YET, NO_NEW_DEPARTURE_TIME_YET, NO_NEW_DRIVER_YET, bestInsertionCost);
+			if (!(newIData instanceof InsertionData.NoInsertionFound)) {
+				if (newIData.getInsertionCost() < bestInsertionCost + noiseMaker.makeNoise()) {
+					bestInsertion = new Insertion(newRoute, newIData);
+					vehicleRoutes.add(newRoute);
 				}
+			} else {
+				empty.getFailedConstraintNames().addAll(newIData.getFailedConstraintNames());
 			}
-			// end 
-
 			if (bestInsertion == null) {
 				badJobs.add(unassignedJob);
 				markUnassigned(unassignedJob, empty.getFailedConstraintNames());
