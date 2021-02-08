@@ -28,146 +28,148 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-
 public class BestInsertionBuilder {
 
-    private VehicleRoutingProblem vrp;
+	private VehicleRoutingProblem vrp;
 
-    private StateManager stateManager;
+	private StateManager stateManager;
 
-    private boolean local = true;
+	private boolean local = true;
 
-    private ConstraintManager constraintManager;
+	private ConstraintManager constraintManager;
 
-    private VehicleFleetManager fleetManager;
+	private VehicleFleetManager fleetManager;
 
-    private double weightOfFixedCosts;
+	private double weightOfFixedCosts;
 
-    private boolean considerFixedCosts = false;
+	private boolean considerFixedCosts = false;
 
-    private ActivityInsertionCostsCalculator actInsertionCostsCalculator = null;
+	private ActivityInsertionCostsCalculator actInsertionCostsCalculator = null;
 
-    private int forwaredLooking;
+	private int forwaredLooking;
 
-    private int memory;
+	private int memory;
 
-    private ExecutorService executor;
+	private ExecutorService executor;
 
-    private int nuOfThreads;
+	private int nuOfThreads;
 
-    private double timeSlice;
+	private double timeSlice;
 
-    private int nNeighbors;
+	private int nNeighbors;
 
-    private boolean timeScheduling = false;
+	private boolean timeScheduling = false;
 
-    private boolean allowVehicleSwitch = true;
+	private boolean allowVehicleSwitch = true;
 
-    private boolean addDefaultCostCalc = true;
+	private boolean addDefaultCostCalc = true;
 
-    public BestInsertionBuilder(VehicleRoutingProblem vrp, VehicleFleetManager vehicleFleetManager, StateManager stateManager, ConstraintManager constraintManager) {
-        super();
-        this.vrp = vrp;
-        this.stateManager = stateManager;
-        this.constraintManager = constraintManager;
-        this.fleetManager = vehicleFleetManager;
-    }
+	public BestInsertionBuilder(VehicleRoutingProblem vrp, VehicleFleetManager vehicleFleetManager,
+			StateManager stateManager, ConstraintManager constraintManager) {
+		super();
+		this.vrp = vrp;
+		this.stateManager = stateManager;
+		this.constraintManager = constraintManager;
+		this.fleetManager = vehicleFleetManager;
+	}
 
-    public BestInsertionBuilder setRouteLevel(int forwardLooking, int memory) {
-        local = false;
-        this.forwaredLooking = forwardLooking;
-        this.memory = memory;
-        return this;
-    }
+	public BestInsertionBuilder setRouteLevel(int forwardLooking, int memory) {
+		local = false;
+		this.forwaredLooking = forwardLooking;
+		this.memory = memory;
+		return this;
+	}
 
-    ;
+	;
 
-    public BestInsertionBuilder setRouteLevel(int forwardLooking, int memory, boolean addDefaultMarginalCostCalculation) {
-        local = false;
-        this.forwaredLooking = forwardLooking;
-        this.memory = memory;
-        this.addDefaultCostCalc = addDefaultMarginalCostCalculation;
-        return this;
-    }
+	public BestInsertionBuilder setRouteLevel(int forwardLooking, int memory,
+			boolean addDefaultMarginalCostCalculation) {
+		local = false;
+		this.forwaredLooking = forwardLooking;
+		this.memory = memory;
+		this.addDefaultCostCalc = addDefaultMarginalCostCalculation;
+		return this;
+	}
 
-    ;
+	;
 
-    public BestInsertionBuilder setLocalLevel() {
-        local = true;
-        return this;
-    }
+	public BestInsertionBuilder setLocalLevel() {
+		local = true;
+		return this;
+	}
 
-    ;
+	;
 
-    /**
-     * If addDefaulMarginalCostCalculation is false, no calculator is set which implicitly assumes that marginal cost calculation
-     * is controlled by your custom soft constraints.
-     *
-     * @param addDefaultMarginalCostCalculation
-     * @return
-     */
-    public BestInsertionBuilder setLocalLevel(boolean addDefaultMarginalCostCalculation) {
-        local = true;
-        addDefaultCostCalc = addDefaultMarginalCostCalculation;
-        return this;
-    }
+	/**
+	 * If addDefaulMarginalCostCalculation is false, no calculator is set which
+	 * implicitly assumes that marginal cost calculation is controlled by your
+	 * custom soft constraints.
+	 *
+	 * @param addDefaultMarginalCostCalculation
+	 * @return
+	 */
+	public BestInsertionBuilder setLocalLevel(boolean addDefaultMarginalCostCalculation) {
+		local = true;
+		addDefaultCostCalc = addDefaultMarginalCostCalculation;
+		return this;
+	}
 
-    public BestInsertionBuilder considerFixedCosts(double weightOfFixedCosts) {
-        this.weightOfFixedCosts = weightOfFixedCosts;
-        this.considerFixedCosts = true;
-        return this;
-    }
+	public BestInsertionBuilder considerFixedCosts(double weightOfFixedCosts) {
+		this.weightOfFixedCosts = weightOfFixedCosts;
+		this.considerFixedCosts = true;
+		return this;
+	}
 
-    public BestInsertionBuilder setActivityInsertionCostCalculator(ActivityInsertionCostsCalculator activityInsertionCostsCalculator) {
-        this.actInsertionCostsCalculator = activityInsertionCostsCalculator;
-        return this;
-    }
+	public BestInsertionBuilder setActivityInsertionCostCalculator(
+			ActivityInsertionCostsCalculator activityInsertionCostsCalculator) {
+		this.actInsertionCostsCalculator = activityInsertionCostsCalculator;
+		return this;
+	}
 
-    ;
+	;
 
-    public BestInsertionBuilder setConcurrentMode(ExecutorService executor, int nuOfThreads) {
-        this.executor = executor;
-        this.nuOfThreads = nuOfThreads;
-        return this;
-    }
+	public BestInsertionBuilder setConcurrentMode(ExecutorService executor, int nuOfThreads) {
+		this.executor = executor;
+		this.nuOfThreads = nuOfThreads;
+		return this;
+	}
 
+	public InsertionStrategy build(boolean considerNewRoutes) {
+		List<InsertionListener> iListeners = new ArrayList<InsertionListener>();
+		List<PrioritizedVRAListener> algorithmListeners = new ArrayList<PrioritizedVRAListener>();
+		JobInsertionCostsCalculatorBuilder calcBuilder = new JobInsertionCostsCalculatorBuilder(iListeners,
+				algorithmListeners);
+		if (local) {
+			calcBuilder.setLocalLevel(addDefaultCostCalc);
+		} else {
+			calcBuilder.setRouteLevel(forwaredLooking, memory, addDefaultCostCalc);
+		}
+		calcBuilder.setConstraintManager(constraintManager);
+		calcBuilder.setStateManager(stateManager);
+		calcBuilder.setVehicleRoutingProblem(vrp);
+		calcBuilder.setVehicleFleetManager(fleetManager);
+		calcBuilder.setActivityInsertionCostsCalculator(actInsertionCostsCalculator);
+		if (considerFixedCosts) {
+			calcBuilder.considerFixedCosts(weightOfFixedCosts);
+		}
+		if (timeScheduling) {
+			calcBuilder.experimentalTimeScheduler(timeSlice, nNeighbors);
+		}
+		calcBuilder.setAllowVehicleSwitch(allowVehicleSwitch);
+		JobInsertionCostsCalculator jobInsertions = calcBuilder.build();
+		InsertionStrategy bestInsertion;
+		if (executor == null) {
+			bestInsertion = new BestInsertion(jobInsertions, vrp, considerNewRoutes);
+		} else {
+			bestInsertion = new BestInsertionConcurrent(jobInsertions, executor, nuOfThreads, vrp);
+		}
+		for (InsertionListener l : iListeners)
+			bestInsertion.addListener(l);
+		return bestInsertion;
+	}
 
-    public InsertionStrategy build() {
-        List<InsertionListener> iListeners = new ArrayList<InsertionListener>();
-        List<PrioritizedVRAListener> algorithmListeners = new ArrayList<PrioritizedVRAListener>();
-        JobInsertionCostsCalculatorBuilder calcBuilder = new JobInsertionCostsCalculatorBuilder(iListeners, algorithmListeners);
-        if (local) {
-            calcBuilder.setLocalLevel(addDefaultCostCalc);
-        } else {
-            calcBuilder.setRouteLevel(forwaredLooking, memory, addDefaultCostCalc);
-        }
-        calcBuilder.setConstraintManager(constraintManager);
-        calcBuilder.setStateManager(stateManager);
-        calcBuilder.setVehicleRoutingProblem(vrp);
-        calcBuilder.setVehicleFleetManager(fleetManager);
-        calcBuilder.setActivityInsertionCostsCalculator(actInsertionCostsCalculator);
-        if (considerFixedCosts) {
-            calcBuilder.considerFixedCosts(weightOfFixedCosts);
-        }
-        if (timeScheduling) {
-            calcBuilder.experimentalTimeScheduler(timeSlice, nNeighbors);
-        }
-        calcBuilder.setAllowVehicleSwitch(allowVehicleSwitch);
-        JobInsertionCostsCalculator jobInsertions = calcBuilder.build();
-        InsertionStrategy bestInsertion;
-        if (executor == null) {
-            bestInsertion = new BestInsertion(jobInsertions, vrp);
-        } else {
-            bestInsertion = new BestInsertionConcurrent(jobInsertions, executor, nuOfThreads, vrp);
-        }
-        for (InsertionListener l : iListeners) bestInsertion.addListener(l);
-        return bestInsertion;
-    }
-
-
-    public void setAllowVehicleSwitch(boolean allowVehicleSwitch) {
-        this.allowVehicleSwitch = allowVehicleSwitch;
-    }
-
+	public void setAllowVehicleSwitch(boolean allowVehicleSwitch) {
+		this.allowVehicleSwitch = allowVehicleSwitch;
+	}
 
 }

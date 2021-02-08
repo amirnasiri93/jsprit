@@ -175,7 +175,7 @@ public class InsertionBuilder {
         InsertionStrategy insertion;
         if (strategy.equals(Strategy.BEST)) {
             if (executor == null) {
-                insertion = new BestInsertion(costCalculator, vrp);
+                insertion = new BestInsertion(costCalculator, vrp, true);
             } else {
                 insertion = new BestInsertionConcurrent(costCalculator, executor, nuOfThreads, vrp);
             }

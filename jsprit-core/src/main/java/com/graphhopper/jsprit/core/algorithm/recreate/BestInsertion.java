@@ -42,11 +42,15 @@ public final class BestInsertion extends AbstractInsertionStrategy {
 
 	private NoiseMaker noiseMaker = () -> 0;
 
+	// added by Amir Nasiri:
+	private boolean considerNewRoutes;
+
 	public BestInsertion(JobInsertionCostsCalculator jobInsertionCalculator,
-			VehicleRoutingProblem vehicleRoutingProblem) {
+			VehicleRoutingProblem vehicleRoutingProblem, boolean considerNewRoutes) {
 		super(vehicleRoutingProblem);
 		bestInsertionCostCalculator = jobInsertionCalculator;
 		logger.debug("initialise {}", this);
+		this.considerNewRoutes = considerNewRoutes;
 	}
 
 	@Override
@@ -77,16 +81,18 @@ public final class BestInsertion extends AbstractInsertionStrategy {
 					bestInsertionCost = iData.getInsertionCost();
 				}
 			}
-			VehicleRoute newRoute = VehicleRoute.emptyRoute();
-			InsertionData newIData = bestInsertionCostCalculator.getInsertionData(newRoute, unassignedJob,
-					NO_NEW_VEHICLE_YET, NO_NEW_DEPARTURE_TIME_YET, NO_NEW_DRIVER_YET, bestInsertionCost);
-			if (!(newIData instanceof InsertionData.NoInsertionFound)) {
-				if (newIData.getInsertionCost() < bestInsertionCost + noiseMaker.makeNoise()) {
-					bestInsertion = new Insertion(newRoute, newIData);
-					vehicleRoutes.add(newRoute);
+			if (considerNewRoutes) {
+				VehicleRoute newRoute = VehicleRoute.emptyRoute();
+				InsertionData newIData = bestInsertionCostCalculator.getInsertionData(newRoute, unassignedJob,
+						NO_NEW_VEHICLE_YET, NO_NEW_DEPARTURE_TIME_YET, NO_NEW_DRIVER_YET, bestInsertionCost);
+				if (!(newIData instanceof InsertionData.NoInsertionFound)) {
+					if (newIData.getInsertionCost() < bestInsertionCost + noiseMaker.makeNoise()) {
+						bestInsertion = new Insertion(newRoute, newIData);
+						vehicleRoutes.add(newRoute);
+					}
+				} else {
+					empty.getFailedConstraintNames().addAll(newIData.getFailedConstraintNames());
 				}
-			} else {
-				empty.getFailedConstraintNames().addAll(newIData.getFailedConstraintNames());
 			}
 			if (bestInsertion == null) {
 				badJobs.add(unassignedJob);
