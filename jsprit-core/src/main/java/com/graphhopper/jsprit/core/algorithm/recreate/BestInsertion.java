@@ -80,6 +80,11 @@ public final class BestInsertion extends AbstractInsertionStrategy {
 					bestInsertion = new Insertion(vehicleRoute, iData);
 					bestInsertionCost = iData.getInsertionCost();
 				}
+
+				// if we have found a possible insertion then stop the search...
+				if (!considerNewRoutes && !(iData instanceof InsertionData.NoInsertionFound)) {
+					break;
+				}
 			}
 			if (considerNewRoutes) {
 				VehicleRoute newRoute = VehicleRoute.emptyRoute();
